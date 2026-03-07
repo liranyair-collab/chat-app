@@ -15,7 +15,9 @@
     "react-dom": "19.2.3",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
-    "uuid": "^13.0.0"
+    "uuid": "^13.0.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -24,8 +26,6 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
-    "tailwindcss": "^4",
-    "tsx": "^4.21.0",
-    "typescript": "^5"
+    "tailwindcss": "^4"
   }
 }
