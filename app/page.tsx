@@ -37,7 +37,7 @@ export default function Home() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Enter your name..."
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
               maxLength={20}
               required
               autoFocus
@@ -51,7 +51,7 @@ export default function Home() {
             <select
               value={room}
               onChange={(e) => setRoom(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
             >
               <option value="general">General</option>
               <option value="tech">Tech</option>
