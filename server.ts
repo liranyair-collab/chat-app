@@ -68,7 +68,7 @@ app.prepare().then(() => {
             io.to(room).emit("ai-start", { id: aiMsgId });
 
             const model = genAI.getGenerativeModel({
-              model: "gemini-1.5-flash",
+              model: "gemini-2.0-flash",
               systemInstruction:
                 "You are a helpful AI assistant participating in a group chat. Be concise and friendly. Reply in the same language as the user.",
             });
