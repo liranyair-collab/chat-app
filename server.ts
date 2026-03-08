@@ -162,8 +162,8 @@ app.prepare().then(() => {
 
         io.to(room).emit("message", message);
 
-        // Check if message mentions @claude
-        if (message.text.toLowerCase().includes("@claude")) {
+        // Check if message mentions @g
+        if (message.text.toLowerCase().includes("@g")) {
           const check = isAllowed(message.author);
           if (!check.allowed) {
             io.to(room).emit("ai-error", {
@@ -172,7 +172,7 @@ app.prepare().then(() => {
             return;
           }
 
-          const prompt = message.text.replace(/@claude/gi, "").trim();
+          const prompt = message.text.replace(/@g/gi, "").trim();
           const history = roomMessages[room].slice(-10);
 
           try {
