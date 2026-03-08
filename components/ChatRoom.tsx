@@ -71,7 +71,7 @@ export default function ChatRoom({ username, room }: Props) {
       const errMsg: Message = {
         id: `err-${Date.now()}`,
         room,
-        author: "Claude",
+        author: "Gemini",
         text,
         timestamp: Date.now(),
         isAI: true,
@@ -123,7 +123,7 @@ export default function ChatRoom({ username, room }: Props) {
       {/* Hint */}
       <div className="bg-indigo-50 border-b border-indigo-100 px-6 py-2 text-xs text-indigo-500">
         Tip: mention{" "}
-        <code className="bg-indigo-100 px-1 rounded">@claude</code> to ask the
+        <code className="bg-indigo-100 px-1 rounded">@g</code> to ask the
         AI a question
       </div>
 
@@ -184,7 +184,7 @@ export default function ChatRoom({ username, room }: Props) {
           <div className="flex justify-start">
             <div className="max-w-[75%] rounded-2xl px-4 py-2 bg-amber-50 border border-amber-200 text-gray-800">
               <div className="text-xs font-semibold mb-1 text-amber-600">
-                Claude
+                Gemini
               </div>
               <p className="text-sm whitespace-pre-wrap">
                 {aiStreaming.text}
@@ -206,7 +206,7 @@ export default function ChatRoom({ username, room }: Props) {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder={`Message #${room}... (mention @claude for AI)`}
+          placeholder={`Message #${room}... (mention @g for AI)`}
           className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white"
           disabled={!connected}
         />

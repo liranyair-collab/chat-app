@@ -2,13 +2,13 @@ import { createServer } from "http";
 import { parse } from "url";
 import next from "next";
 import { Server } from "socket.io";
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const dev = process.env.NODE_ENV !== "production";
 const app = next({ dev });
 const handle = app.getRequestHandler();
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 interface Message {
   id: string;
@@ -56,38 +56,36 @@ app.prepare().then(() => {
         // Broadcast to room
         io.to(room).emit("message", message);
 
-        // Check if message mentions @claude
-        if (message.text.toLowerCase().includes("@claude")) {
-          const prompt = message.text.replace(/@claude/gi, "").trim();
-          const history = roomMessages[room].slice(-10); // last 10 msgs as context
+        // Check if message mentions @g
+        if (message.text.toLowerCase().includes("@g")) {
+          const prompt = message.text.replace(/@g/gi, "").trim();
+          const history = roomMessages[room].slice(-10);
 
           try {
-            // Stream AI response
             const aiMsgId = `ai-${Date.now()}`;
             let fullText = "";
 
             io.to(room).emit("ai-start", { id: aiMsgId });
 
-            const stream = await anthropic.messages.stream({
-              model: "claude-sonnet-4-6",
-              max_tokens: 1024,
-              system:
+            const model = genAI.getGenerativeModel({
+              model: "gemini-1.5-flash",
+              systemInstruction:
                 "You are a helpful AI assistant participating in a group chat. Be concise and friendly. Reply in the same language as the user.",
-              messages: [
-                ...history.map((m) => ({
-                  role: "user" as const,
-                  content: `${m.author}: ${m.text}`,
-                })),
-                { role: "user", content: prompt || message.text },
-              ],
             });
 
-            for await (const chunk of stream) {
-              if (
-                chunk.type === "content_block_delta" &&
-                chunk.delta.type === "text_delta"
-              ) {
-                fullText += chunk.delta.text;
+            const historyText = history
+              .map((m) => `${m.author}: ${m.text}`)
+              .join("\n");
+            const fullPrompt = historyText
+              ? `${historyText}\n\n${prompt || message.text}`
+              : prompt || message.text;
+
+            const result = await model.generateContentStream(fullPrompt);
+
+            for await (const chunk of result.stream) {
+              const text = chunk.text();
+              if (text) {
+                fullText += text;
                 io.to(room).emit("ai-delta", { id: aiMsgId, text: fullText });
               }
             }
@@ -95,7 +93,7 @@ app.prepare().then(() => {
             const aiMessage: Message = {
               id: aiMsgId,
               room,
-              author: "Claude",
+              author: "Gemini",
               text: fullText,
               timestamp: Date.now(),
               isAI: true,
@@ -104,9 +102,9 @@ app.prepare().then(() => {
             io.to(room).emit("ai-done", aiMessage);
           } catch (err: any) {
             console.error("AI error:", err);
-            const errMsg = err?.message || err?.error?.message || String(err);
+            const errMsg = err?.message || String(err);
             io.to(room).emit("ai-error", {
-              text: `Claude error: ${errMsg}`,
+              text: `Gemini error: ${errMsg}`,
             });
           }
         }
