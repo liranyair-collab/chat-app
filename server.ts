@@ -102,10 +102,11 @@ app.prepare().then(() => {
             };
             roomMessages[room].push(aiMessage);
             io.to(room).emit("ai-done", aiMessage);
-          } catch (err) {
+          } catch (err: any) {
             console.error("AI error:", err);
+            const errMsg = err?.message || err?.error?.message || String(err);
             io.to(room).emit("ai-error", {
-              text: "Claude is unavailable. Make sure ANTHROPIC_API_KEY is set.",
+              text: `Claude error: ${errMsg}`,
             });
           }
         }
