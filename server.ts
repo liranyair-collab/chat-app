@@ -2,13 +2,13 @@ import { createServer } from "http";
 import { parse } from "url";
 import next from "next";
 import { Server } from "socket.io";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import Anthropic from "@anthropic-ai/sdk";
 
 const dev = process.env.NODE_ENV !== "production";
 const app = next({ dev });
 const handle = app.getRequestHandler();
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY || "" });
 
 interface Message {
   id: string;
@@ -56,9 +56,9 @@ app.prepare().then(() => {
         // Broadcast to room
         io.to(room).emit("message", message);
 
-        // Check if message mentions @g
-        if (message.text.toLowerCase().includes("@g")) {
-          const prompt = message.text.replace(/@g/gi, "").trim();
+        // Check if message mentions @claude
+        if (message.text.toLowerCase().includes("@claude")) {
+          const prompt = message.text.replace(/@claude/gi, "").trim();
           const history = roomMessages[room].slice(-10);
 
           try {
@@ -67,12 +67,6 @@ app.prepare().then(() => {
 
             io.to(room).emit("ai-start", { id: aiMsgId });
 
-            const model = genAI.getGenerativeModel({
-              model: "gemini-2.0-flash",
-              systemInstruction:
-                "You are a helpful AI assistant participating in a group chat. Be concise and friendly. Reply in the same language as the user.",
-            });
-
             const historyText = history
               .map((m) => `${m.author}: ${m.text}`)
               .join("\n");
@@ -80,12 +74,20 @@ app.prepare().then(() => {
               ? `${historyText}\n\n${prompt || message.text}`
               : prompt || message.text;
 
-            const result = await model.generateContentStream(fullPrompt);
+            const stream = anthropic.messages.stream({
+              model: "claude-opus-4-6",
+              max_tokens: 1024,
+              system:
+                "You are a helpful AI assistant participating in a group chat. Be concise and friendly. Reply in the same language as the user.",
+              messages: [{ role: "user", content: fullPrompt }],
+            });
 
-            for await (const chunk of result.stream) {
-              const text = chunk.text();
-              if (text) {
-                fullText += text;
+            for await (const event of stream) {
+              if (
+                event.type === "content_block_delta" &&
+                event.delta.type === "text_delta"
+              ) {
+                fullText += event.delta.text;
                 io.to(room).emit("ai-delta", { id: aiMsgId, text: fullText });
               }
             }
@@ -93,18 +95,20 @@ app.prepare().then(() => {
             const aiMessage: Message = {
               id: aiMsgId,
               room,
-              author: "Gemini",
+              author: "Claude",
               text: fullText,
               timestamp: Date.now(),
               isAI: true,
             };
             roomMessages[room].push(aiMessage);
             io.to(room).emit("ai-done", aiMessage);
-          } catch (err: any) {
+          } catch (err: unknown) {
             console.error("AI error:", err);
-            const errMsg = err?.message || String(err);
+            const errMsg = err instanceof Anthropic.APIError
+              ? `${err.status}: ${err.message}`
+              : String(err);
             io.to(room).emit("ai-error", {
-              text: `Gemini error: ${errMsg}`,
+              text: `Claude error: ${errMsg}`,
             });
           }
         }
